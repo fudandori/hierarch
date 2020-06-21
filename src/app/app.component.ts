@@ -1,20 +1,20 @@
-import { Component, Renderer2, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, AfterViewInit } from '@angular/core';
+import { HierarchComponent, Node } from './hierarch/hierarch.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements AfterViewInit {
 
   title = 'Hierarch';
-  min = 0;
 
-  @ViewChild('canvas') canvas: ElementRef;
+  @ViewChild('hierarch') hierarch: HierarchComponent;
 
-  private obj = new Node('root');
+  private root = new Node('root');
 
-  constructor(private rend: Renderer2) {
+  constructor() {
     const A = new Node('A');
     const B = new Node('B');
     const C = new Node('C');
@@ -50,8 +50,7 @@ export class AppComponent implements OnInit {
     const AG = new Node('AG');
     const AH = new Node('AH');
 
-    AH.children = [new Node('UWU')];
-    this.obj.children = [A, AH, S, W];
+    this.root.children = [new Node('CC'),A, AH,  new Node('GG'), S, W];
     A.children = [B, C];
     B.children = [D];
     D.children = [E, F, new Node('XX'), G];
@@ -63,161 +62,13 @@ export class AppComponent implements OnInit {
     U.children = [AB, AC, AD];
     AD.children = [AE];
     C.children = [AF, AG];
-    AF.children = [new Node('KU'), new Node('AK')]
+    AF.children = [new Node('KU'), new Node('AK')];
+    T.children = [new Node('TT')]
   }
 
-  ngOnInit() {
-    this.init(this.obj, -1);
-    this.center(this.obj);
-    this.obj.children
-      .filter(c => c.i > 0)
-      .forEach(c => this.displace(c, c.w));
-
-    this.detach(this.obj, null);
-    this.setMin(this.obj);
-    this.displace(this.obj, Math.abs(this.min));
-    this.centerRoot();
-    this.print(this.obj);
+  ngAfterViewInit() {
+    this.hierarch.draw(this.root);
   }
 
-  private centerRoot() {
-    this.obj.x = this.obj.children[0].x + (this.obj.children[this.obj.children.length - 1].x - this.obj.children[0].x)/2 + .5;
-  }
-
-  private searchSibling(node: Node, pos: number): Node {
-    for (let i = pos; i >= 0; i--)
-      if (node.children[i] && node.children[i].children) return node.children[i];
-  }
-
-  private detach(node: Node, parent: Node) {
-    if (node.children) {
-      node.children.forEach(c => this.detach(c, node));
-
-      if (node.i > 0 && parent) {
-        const sibling = this.searchSibling(parent, node.i - 1)
-
-        if (sibling) {
-
-          if (sibling.children && this.rightContour(sibling) >= this.leftContour(node)) {
-            this.displace(node, this.rightContour(sibling) - this.leftContour(node) + 1);
-          }
-        }
-      }
-    }
-  }
-
-  private setMin(node: Node) {
-    if (node.children) {
-      node.children.forEach(c => {
-        if (this.min > c.x) this.min = c.x;
-        this.setMin(c);
-      })
-    }
-  }
-
-  private init(node: Node, level: number) {
-    level++;
-
-    node.y = level;
-
-    if (node.children) {
-      let w = 0;
-      for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        child.x = i;
-        child.i = i;
-        this.init(child, level);
-
-        w += child.w;
-      }
-
-      node.w = w;
-    }
-  }
-
-  private center(node: Node) {
-    if (node.children) {
-      const distance = node.children[node.children.length - 1].x - node.children[0].x + 1;
-      node.children.forEach(c => {
-        const offset = 0.5 + c.i - distance / 2;
-        c.x = node.x + offset;
-
-        this.center(c);
-      });
-    }
-  }
-
-  private displace(node: Node, x: number) {
-    node.x += x;
-
-    if (node.children) {
-      node.children.forEach(c => this.displace(c, x));
-    }
-  }
-
-  private leftContour(node: Node): number {
-    let r = node.x;
-
-    if (node.children) {
-      node.children.forEach(c => {
-        let co = this.leftContour(c);
-        if (r > co) r = co;
-      })
-    }
-
-    return r;
-  }
-
-  private rightContour(node: Node): number {
-    let r = node.x;
-
-    if (node.children) {
-      node.children.forEach(c => {
-        let co = this.rightContour(c);
-        if (r < co) r = co;
-      })
-    }
-
-    return r;
-  }
-
-  private print(node: Node) {
-    const div = document.createElement('div');
-    const text = document.createElement('strong');
-
-    text.innerHTML = node.name;
-    div.appendChild(text);
-    div.style.backgroundColor = 'SteelBlue';
-    div.style.color = 'White';
-    div.style.height = '50px';
-    div.style.width = '50px';
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.justifyContent = 'center';
-    div.style.position = 'absolute';
-    div.style.borderRadius = '5px';
-    div.style.left = node.x * 55 + 'px';
-    div.style.top = node.y * 100 + 'px';
-
-    document.getElementById('canvas').appendChild(div);
-
-    if (node.children) {
-      node.children.forEach(c => this.print(c));
-    }
-  }
-
-}
-
-
-class Node {
-  name: string;
-  children: Node[];
-  x = 0;
-  y = 0;
-  i = 0;
-  w = 1;
-
-  constructor(name: string) {
-    this.name = name;
-  }
+  
 }
